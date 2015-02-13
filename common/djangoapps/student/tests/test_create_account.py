@@ -84,13 +84,19 @@ class TestCreateAccount(TestCase):
     def test_profile_saved_no_optional_fields(self):
         profile = self.create_account_and_fetch_profile()
         self.assertEqual(profile.name, self.params["name"])
-        self.assertIsNone(profile.level_of_education)
-        self.assertIsNone(profile.gender)
-        self.assertIsNone(profile.mailing_address)
-        self.assertIsNone(profile.city)
+        self.assertEqual(profile.level_of_education, "")
+        self.assertEqual(profile.gender, "")
+        self.assertEqual(profile.mailing_address, "")
+        self.assertEqual(profile.city, "")
         self.assertEqual(profile.country, "")
-        self.assertIsNone(profile.goals)
-        self.assertEqual(profile.meta, "")
+        self.assertEqual(profile.goals, "")
+        self.assertEqual(
+            profile.get_meta(),
+            {
+                "extra1": "",
+                "extra2": "",
+            }
+        )
         self.assertIsNone(profile.year_of_birth)
 
     def test_profile_saved_all_optional_fields(self):

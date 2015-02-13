@@ -176,7 +176,7 @@ class AccountCreationForm(forms.Form):
                         field_name,
                         _("You are missing one or more required fields")
                     )
-                    self.fields[field_name] = NullableCharField(
+                    self.fields[field_name] = forms.CharField(
                         required=required,
                         min_length=min_length,
                         error_messages={
@@ -187,7 +187,7 @@ class AccountCreationForm(forms.Form):
 
         for field in self.extended_profile_fields:
             if field not in self.fields:
-                self.fields[field] = NullableCharField(required=False)
+                self.fields[field] = forms.CharField(required=False)
 
     def clean_password(self):
         """Enforce password policies (if applicable)"""
