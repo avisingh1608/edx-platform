@@ -423,6 +423,16 @@
             },
             'js/verify_student/views/webcam_photo_view': {
                 exports: 'edx.verify_student.WebcamPhotoView',
+                deps: [
+                    'jquery',
+                    'underscore',
+                    'backbone',
+                    'gettext',
+                    'js/verify_student/views/image_input_view'
+                ]
+            },
+            'js/verify_student/views/image_input_view': {
+                exports: 'edx.verify_student.ImageInputView',
                 deps: [ 'jquery', 'underscore', 'backbone', 'gettext' ]
             },
             'js/verify_student/views/step_view': {

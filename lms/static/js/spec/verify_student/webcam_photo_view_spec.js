@@ -36,6 +36,7 @@ define([
                 }
 
                 return {
+                    name: name,
                     initialize: function() {},
                     isSupported: function() { return isSupported;  },
                     snapshot: function() { return snapshotSuccess; },
