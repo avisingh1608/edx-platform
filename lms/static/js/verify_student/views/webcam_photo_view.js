@@ -1,6 +1,6 @@
 /**
  * Interface for retrieving webcam photos.
- * Supports both HTML5 and Flash.
+ * Supports HTML5, Flash, and file input.
  */
  var edx = edx || {};
 
@@ -13,8 +13,8 @@
 
         template: "#webcam_photo-tpl",
 
-        backends: [
-            {
+        backends: {
+            "html5": {
                 name: "html5",
 
                 initialize: function( obj ) {
@@ -98,8 +98,7 @@
                 }
             },
 
-            {
-                name: "flash",
+            "flash": {
 
                 initialize: function( obj ) {
                     this.wrapper = obj.wrapper || "";
@@ -203,36 +202,20 @@
                     // so we don't need to keep checking.
                 }
             }
-        ],
+        },
 
         initialize: function( obj ) {
             this.submitButton = obj.submitButton || "";
             this.modelAttribute = obj.modelAttribute || "";
             this.errorModel = obj.errorModel || null;
-            this.backend = _.find(
-                obj.backends || this.backends,
-                function( backend ) {
-                    return backend.isSupported();
-                }
-            );
+            this.backend = this.backends[obj.backendName] || obj.backend;
 
-            if ( !this.backend ) {
-                this.handleError(
-                    gettext( "Flash Not Detected" ),
-                    gettext( "You don't seem to have Flash installed." ) + "  " +
-                    _.sprintf(
-                        gettext( "%(a_start)s Get Flash %(a_end)s to continue your enrollment." ),
-                        {
-                            a_start: '<a rel="external" href="http://get.adobe.com/flashplayer/">',
-                            a_end: '</a>'
-                        }
-                    )
-                );
-            }
-            else {
-                _.extend( this.backend, Backbone.Events );
-                this.listenTo( this.backend, 'error', this.handleError );
-            }
+            _.extend( this.backend, Backbone.Events );
+            this.listenTo( this.backend, 'error', this.handleError );
+        },
+
+        isSupported: function() {
+            return this.backend.isSupported();
         },
 
         render: function() {
@@ -324,5 +307,132 @@
                 .attr('aria-disabled', !isEnabled);
         }
     });
+
+
+    /**
+     * Allow users to upload an image using a file input.
+     *
+     * This uses HTML Media Capture so that iOS will
+     * allow users to use their camera instead of choosing
+     * a file.
+     */
+    edx.verify_student.ImageInputView = Backbone.View.extend({
+
+        template: "#image_input-tpl",
+
+        initialize: function( obj ) {
+            this.$submitButton = obj.submitButton || "";
+            this.modelAttribute = obj.modelAttribute || "";
+            this.errorModel = obj.errorModel || null;
+        },
+
+        render: function() {
+            var renderedHtml;
+
+            // Load the template for the webcam into the DOM
+            renderedHtml = _.template( $( this.template ).html(), {} );
+            $( this.el ).html( renderedHtml );
+
+            // TODO
+            this.$input = $( 'input.image-upload' );
+            this.$input.on('change', _.bind( this.handleInputChange, this ) );
+
+            this.$preview = $( 'img.preview' );
+
+            return this;
+        },
+
+        handleInputChange: function( event ) {
+            var files = event.target.files,
+                reader = new FileReader();
+            if ( files[0] && files[0].type.match( 'image.[png|jpg|jpeg]' ) ) {
+                reader.onload = _.bind( this.handleImageUpload, this );
+                reader.onerror = _.bind( this.handleUploadError, this );
+                reader.readAsDataURL( files[0] );
+            }
+            else if ( files.length === 0 ) {
+                this.handleUploadError( false );
+            }
+            else {
+                this.handleUploadError( true );
+            }
+        },
+
+        handleImageUpload: function( event ) {
+            var imageData = event.target.result;
+            this.model.set( this.modelAttribute, imageData );
+            this.displayImage( imageData );
+            this.setSubmitButtonEnabled( true );
+            this.trigger( 'imageCaptured' );
+        },
+
+        displayImage: function( imageData ) {
+            if ( imageData ) {
+                this.$preview.attr( 'src', imageData );
+            } else {
+                this.$preview.attr( 'src', '' );
+            }
+        },
+
+        handleUploadError: function( displayError ) {
+            this.displayImage( null );
+            this.setSubmitButtonEnabled( false );
+            if ( this.errorModel ) {
+                if ( displayError ) {
+                    this.errorModel.set({
+                        errorTitle: gettext( 'Image Upload Error' ),
+                        errorMsg: gettext( 'Please verify that you have uploaded a valid image (PNG and JPEG).' ),
+                        shown: true
+                    });
+                } else {
+                    this.errorModel.set({
+                        shown: false
+                    });
+                }
+            }
+        },
+
+        setSubmitButtonEnabled: function( isEnabled ) {
+            $( this.$submitButton )
+                .toggleClass( 'is-disabled', !isEnabled )
+                .prop( 'disabled', !isEnabled )
+                .attr('aria-disabled', !isEnabled);
+        }
+    });
+
+
+    /**
+     * Retrieve a supported webcam view implementation.
+     *
+     * The priority order from most to least preferable is:
+     * 1) HTML5
+     * 2) Flash
+     * 3) File input
+     *
+     * @param  {Object} obj Parameters to the webcam view.
+     * @return {Object}     A Backbone view.
+     */
+    edx.verify_student.getSupportedWebcamView = function( obj ) {
+        var view = null;
+
+        // First choice is HTML5, supported by most web browsers
+        // obj.backendName = "html5";
+        view = new edx.verify_student.WebcamPhotoView( obj );
+        if ( view.isSupported() ) {
+            return view;
+        }
+
+        // Second choice is Flash, required for older versions of IE
+        // obj.backendName = "flash";
+        view = new edx.verify_student.WebcamPhotoView( obj );
+        if ( view.isSupported() ) {
+            return view;
+        }
+
+        // Last resort is HTML file input with image capture.
+        // This will work everywhere, and on iOS it will
+        // allow users to take a photo with the camera.
+        return new edx.verify_student.ImageInputView( obj );
+    };
 
  })( jQuery, _, Backbone, gettext );

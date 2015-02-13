@@ -1,0 +1,2 @@
+<img class="preview" />
+<input class="image-upload" type="file" accept="image/*;capture=camera">
