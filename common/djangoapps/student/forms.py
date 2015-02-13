@@ -79,25 +79,16 @@ class PasswordResetFormNoActive(PasswordResetForm):
             send_mail(subject, email, from_email, [user.email])
 
 
-class NullableCharField(forms.CharField):
+class TrueField(forms.BooleanField):
     """
-    Like a CharField but distinguishes between None and the empty string
+    A boolean field that only accepts "true" (case-insensitive) as true
     """
     def to_python(self, value):
-        return None if value is None else super(NullableCharField, self).to_python(value)
-
-
-def _make_true_field(error_message):
-    """
-    Returns a required field that only accepts the string "true"
-    """
-    return forms.RegexField(
-        regex="true",
-        error_messages={
-            "required": error_message,
-            "invalid": error_message
-        }
-    )
+        # CheckboxInput converts string to bool by case-insensitive match to "true" or "false"
+        if value is True:
+            return value
+        else:
+            return None
 
 
 class AccountCreationForm(forms.Form):
@@ -155,8 +146,8 @@ class AccountCreationForm(forms.Form):
         self.enforce_username_neq_password = enforce_username_neq_password
         self.enforce_password_policy = enforce_password_policy
         if tos_required:
-            self.fields["terms_of_service"] = _make_true_field(
-                _("You must accept the terms of service.")
+            self.fields["terms_of_service"] = TrueField(
+                error_messages={"required": _("You must accept the terms of service.")}
             )
 
         # TODO: These messages don't say anything about minimum length
@@ -173,8 +164,10 @@ class AccountCreationForm(forms.Form):
             if field_name not in self.fields:
                 if field_name == "honor_code":
                     if field_value == "required":
-                        self.fields[field_name] = _make_true_field(
-                            _("To enroll, you must follow the honor code.")
+                        self.fields[field_name] = TrueField(
+                            error_messages={
+                                "required": _("To enroll, you must follow the honor code.")
+                            }
                         )
                 else:
                     required = field_value == "required"
