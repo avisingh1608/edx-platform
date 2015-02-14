@@ -912,12 +912,10 @@ class SplitModuleItemTests(SplitModuleTest):
         self.assertTrue(modulestore()._block_matches({'a': 1, 'b': 2}, {'group_access': {'$exists': False}}))
         self.assertTrue(modulestore()._block_matches(
             {'a': 1, 'group_access': {'1': [1]}},
-            {'a': 1, 'group_access': {'$exists': True}})
-        )
+            {'a': 1, 'group_access': {'$exists': True}}))
         self.assertFalse(modulestore()._block_matches(
             {'a': 1, 'group_access': {'1': [1]}},
-            {'a': 111, 'group_access': {'$exists': True}})
-        )
+            {'a': 111, 'group_access': {'$exists': True}}))
         self.assertTrue(modulestore()._block_matches({'a': 1, 'b': 2}, {'a': 1, 'group_access': {'$exists': False}}))
         self.assertFalse(modulestore()._block_matches({'a': 1, 'b': 2}, {'a': 9, 'group_access': {'$exists': False}}))
 
