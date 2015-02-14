@@ -303,7 +303,7 @@ class SplitModuleTest(unittest.TestCase):
                             "category": "problem",
                             "fields": {
                                 "display_name": "Problem 3.3",
-                                "group_access": {3: [33]},
+                                "group_access": {"3": ["33"]},
                             },
                         }
                     ]
